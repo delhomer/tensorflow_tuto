@@ -161,7 +161,7 @@ else:
 
 param_history = pd.read_csv("linreg_osm.csv", index_col=False)
 
-#Graphic display
+# Graphic display
 f, ax = plt.subplots(3, 3, figsize=(12,6))
 for i in range(param_history.shape[1]):
     ax[i % 3][int(i / 3)].plot(param_history.iloc[:,i])
