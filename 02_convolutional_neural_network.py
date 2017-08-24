@@ -250,6 +250,37 @@ with tf.Session() as sess:
                                        learning_rate, dropout: DROPOUT})
     print("Optimization Finished!")
     print("Total time: {:.2f} seconds".format(time.time() - start_time))
+    
+    # The results are stored into a pandas dataframe and saved onto the file
+    # system.
+    param_history = pd.DataFrame({"epoch":epoches, "loss":losses,
+                                  "accuracy":accuracies})
+    param_history = param_history.set_index("epoch")
+    if initial_step == 0:
+        param_history.to_csv("cnn_mnist.csv", index=True)
+    else:
+        param_history.to_csv("cnn_mnist.csv", index=True, mode='a', header=False)
+
+    # Then the data into this `csv` file is recovered. We do not consider the
+    # current `param_history` value, as it may represent only the last training
+    # steps, if the train just had been restored from a checkpoint. We use the
+    # results for plotting purpose.
+    param_history = pd.read_csv("cnn_mnist.csv", index_col=False)
+
+    # Graphic display
+    f, ax = plt.subplots(1, 2, figsize=(12,6))
+    ax[0].plot(param_history[["loss"]], color="red", linewidth=2)
+    ax[0].axhline(0, color='black')
+    ax[0].set_yscale('log')
+    ax[1].plot(param_history[["accuracy"]], linewidth=2)
+    ax[1].axhline(0, color='black')
+    ax[1].axhline(0.9, color='black', linestyle="dotted")
+    ax[1].axhline(0.95, color='black', linestyle="dotted")
+    ax[1].axhline(0.99, color='black', linestyle="dotted")
+    ax[1].axhline(1, color='black')
+    ax[1].axvline(0)
+    plt.tight_layout()
+    plt.show()
 
     # Test the model
     X_batch, Y_batch = mnist.test.next_batch(BATCH_SIZE)
