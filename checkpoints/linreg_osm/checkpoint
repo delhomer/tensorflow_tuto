@@ -1,0 +1,6 @@
+model_checkpoint_path: "osm-linreg-14999"
+all_model_checkpoint_paths: "osm-linreg-14799"
+all_model_checkpoint_paths: "osm-linreg-14849"
+all_model_checkpoint_paths: "osm-linreg-14899"
+all_model_checkpoint_paths: "osm-linreg-14949"
+all_model_checkpoint_paths: "osm-linreg-14999"
