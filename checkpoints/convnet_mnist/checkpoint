@@ -1,6 +1,0 @@
-model_checkpoint_path: "epoch-1990"
-all_model_checkpoint_paths: "epoch-1950"
-all_model_checkpoint_paths: "epoch-1960"
-all_model_checkpoint_paths: "epoch-1970"
-all_model_checkpoint_paths: "epoch-1980"
-all_model_checkpoint_paths: "epoch-1990"
