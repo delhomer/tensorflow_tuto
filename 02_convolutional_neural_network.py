@@ -229,7 +229,10 @@ with tf.Session() as sess:
 
     # Train the model
     start_time = time.time()
-    for index in range(n_batches * N_EPOCHS): # train the model n_epochs times
+    epoches = []
+    losses = []
+    accuracies = []
+    for index in range(initial_step, N_BATCHES * N_EPOCHS): # train the model n_epochs times
         X_batch, Y_batch = mnist.train.next_batch(BATCH_SIZE)
         learning_rate = MIN_LR + (MAX_LR - MIN_LR) * math.exp(-index/DECAY_SPEED)
         if index % SKIP_STEP == 0:
@@ -238,6 +241,10 @@ with tf.Session() as sess:
                                            learning_rate, dropout: 1.0})
             print("""Step {}: loss = {:5.1f},\
             accuracy = {:1.3f}""".format(index, loss_batch, accuracy_batch))
+            epoches.append(index)
+            losses.append(loss_batch)
+            accuracies.append(accuracy_batch)
+        if (index+1) % N_BATCHES == 0
             saver.save(sess, 'checkpoints/convnet_mnist/epoch', index)
         sess.run(optimizer, feed_dict={X: X_batch, Y: Y_batch, lrate:
                                        learning_rate, dropout: DROPOUT})
