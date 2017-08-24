@@ -13,6 +13,7 @@
 # for reading state-of-the-art data sets, like MNIST.
 
 import math
+import os
 import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
 # Alternative choice: from tensorflow.examples.tutorials.mnist import input_data
@@ -214,14 +215,14 @@ with tf.Session() as sess:
     # to visualize using TensorBoard (tensorboard --logdir="./graphs/convnet"
     # --port 6006)
     saver = tf.train.Saver()
-    writer = tf.summary.FileWriter('./graphs/convnet', session.graph)
+    writer = tf.summary.FileWriter('./graphs/convnet', sess.graph)
     ##### You have to create folders to store checkpoints
     ckpt = tf.train.get_checkpoint_state(os.path.dirname('checkpoints/convnet_mnist/checkpoint'))
     # if that checkpoint exists, restore from checkpoint
     if ckpt and ckpt.model_checkpoint_path:
         saver.restore(session, ckpt.model_checkpoint_path)
 
-    initial_step = global_step.eval(session=session)
+    initial_step = global_step.eval(session=sess)
 
     # Train the model
     n_batches = int(mnist.train.num_examples / BATCH_SIZE)
@@ -235,7 +236,7 @@ with tf.Session() as sess:
                                            learning_rate, dropout: 1.0})
             print("""Step {}: loss = {:5.1f},\
             accuracy = {:1.3f}""".format(index, loss_batch, accuracy_batch))
-            saver.save(session, 'checkpoints/convnet_mnist/epoch', epoch)
+            saver.save(sess, 'checkpoints/convnet_mnist/epoch', index)
         sess.run(optimizer, feed_dict={X: X_batch, Y: Y_batch, lrate:
                                        learning_rate, dropout: DROPOUT})
     print("Optimization Finished!")
