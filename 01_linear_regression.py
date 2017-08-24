@@ -140,7 +140,7 @@ for epoch in range(initial_step, training_epochs):
         costs.append(training_cost)
         weights.append(weight[:,0])
         biases.append(bias[0])
-        saver.save(session, 'checkpoints/linreg_osm/osm-linreg', epoch)
+        saver.save(session, 'checkpoints/linreg_osm/epoch', epoch)
 
 # The results are stored into a pandas dataframe and saved onto the file
 # system.
