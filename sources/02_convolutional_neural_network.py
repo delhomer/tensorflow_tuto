@@ -61,8 +61,8 @@ def make_dir(path):
         os.mkdir(path)
     except OSError:
         pass
-make_dir('checkpoints')
-make_dir('checkpoints/convnet_mnist')
+make_dir('../checkpoints')
+make_dir('../checkpoints/convnet_mnist')
 
 # Step 4: create placeholders
 
@@ -215,12 +215,12 @@ with tf.name_scope("train"):
 
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
-    # to visualize using TensorBoard (tensorboard --logdir="./graphs/convnet"
+    # to visualize using TensorBoard (tensorboard --logdir="../graphs/convnet"
     # --port 6006)
     saver = tf.train.Saver()
-    writer = tf.summary.FileWriter('./graphs/convnet', sess.graph)
+    writer = tf.summary.FileWriter('../graphs/convnet', sess.graph)
     ##### You have to create folders to store checkpoints
-    ckpt = tf.train.get_checkpoint_state(os.path.dirname('checkpoints/convnet_mnist/checkpoint'))
+    ckpt = tf.train.get_checkpoint_state(os.path.dirname('../checkpoints/convnet_mnist/checkpoint'))
     # if that checkpoint exists, restore from checkpoint
     if ckpt and ckpt.model_checkpoint_path:
         saver.restore(sess, ckpt.model_checkpoint_path)
@@ -245,7 +245,7 @@ with tf.Session() as sess:
             losses.append(loss_batch)
             accuracies.append(accuracy_batch)
         if (index+1) % N_BATCHES == 0
-            saver.save(sess, 'checkpoints/convnet_mnist/epoch', index)
+            saver.save(sess, '../checkpoints/convnet_mnist/epoch', index)
         sess.run(optimizer, feed_dict={X: X_batch, Y: Y_batch, lrate:
                                        learning_rate, dropout: DROPOUT})
     print("Optimization Finished!")

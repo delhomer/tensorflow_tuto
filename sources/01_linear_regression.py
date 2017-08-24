@@ -67,8 +67,8 @@ def make_dir(path):
         os.mkdir(path)
     except OSError:
         pass
-make_dir('checkpoints')
-make_dir('checkpoints/linreg_osm')
+make_dir('../checkpoints')
+make_dir('../checkpoints/linreg_osm')
 
 global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
 
@@ -115,9 +115,9 @@ session = tf.Session()
 session.run(init)
 
 saver = tf.train.Saver()
-writer = tf.summary.FileWriter('./graphs/linreg', session.graph)
+writer = tf.summary.FileWriter('../graphs/linreg', session.graph)
 ##### You have to create folders to store checkpoints
-ckpt = tf.train.get_checkpoint_state(os.path.dirname('checkpoints/linreg_osm/checkpoint'))
+ckpt = tf.train.get_checkpoint_state(os.path.dirname('../checkpoints/linreg_osm/checkpoint'))
 # if that checkpoint exists, restore from checkpoint
 if ckpt and ckpt.model_checkpoint_path:
     saver.restore(session, ckpt.model_checkpoint_path)
@@ -140,7 +140,7 @@ for epoch in range(initial_step, training_epochs):
         costs.append(training_cost)
         weights.append(weight[:,0])
         biases.append(bias[0])
-        saver.save(session, 'checkpoints/linreg_osm/epoch', epoch)
+        saver.save(session, '../checkpoints/linreg_osm/epoch', epoch)
 
 # The results are stored into a pandas dataframe and saved onto the file
 # system.

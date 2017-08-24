@@ -113,14 +113,14 @@ pequals = tf.equal(padd, p4)
 panswer = tf.reshape(pequals, [])
 
 with tf.Session() as sess:
-    writer = tf.summary.FileWriter('./graphs/intro', sess.graph)
+    writer = tf.summary.FileWriter('../graphs/intro', sess.graph)
     answer = sess.run(panswer, feed_dict={p1: [[1, 2, 3]], p2: [[10], [20], [30]], p3: 1000, p4: 1141})
     print("Does the fourth value equal the result obtained with the three others? {}".format(answer))
 
 # Then the graph can be showed onto the local server, with the proper port. The
 # shell command is the following one:
 
-# tensorboard --logdir './graphs/intro' --port 6006
+# tensorboard --logdir '../graphs/intro' --port 6006
 
 # TD;LR
 # Tensorflow:
