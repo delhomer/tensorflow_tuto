@@ -13,7 +13,9 @@
 # for reading state-of-the-art data sets, like MNIST.
 
 import math
+import matplotlib.pyplot as plt
 import os
+import pandas as pd
 import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
 # Alternative choice: from tensorflow.examples.tutorials.mnist import input_data
