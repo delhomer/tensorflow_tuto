@@ -223,7 +223,7 @@ with tf.Session() as sess:
     ckpt = tf.train.get_checkpoint_state(os.path.dirname('checkpoints/convnet_mnist/checkpoint'))
     # if that checkpoint exists, restore from checkpoint
     if ckpt and ckpt.model_checkpoint_path:
-        saver.restore(session, ckpt.model_checkpoint_path)
+        saver.restore(sess, ckpt.model_checkpoint_path)
 
     initial_step = global_step.eval(session=sess)
 
