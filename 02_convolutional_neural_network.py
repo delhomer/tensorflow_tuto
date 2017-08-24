@@ -45,6 +45,7 @@ L_C2 = 64
 L_FC = 512
 N_CLASSES = 10
 BATCH_SIZE = 150
+N_BATCHES = int(mnist.train.num_examples / BATCH_SIZE)
 N_EPOCHS = 5
 MAX_LR = 0.003
 MIN_LR = 0.0001
@@ -227,7 +228,6 @@ with tf.Session() as sess:
     initial_step = global_step.eval(session=sess)
 
     # Train the model
-    n_batches = int(mnist.train.num_examples / BATCH_SIZE)
     start_time = time.time()
     for index in range(n_batches * N_EPOCHS): # train the model n_epochs times
         X_batch, Y_batch = mnist.train.next_batch(BATCH_SIZE)
