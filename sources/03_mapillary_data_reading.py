@@ -110,6 +110,38 @@ def mapillary_data_preparation(dataset="training", nb_labels=1):
                                + ["label_" + str(i) for i in range(nb_labels)])
         train_y.to_csv(os.path.join(OUTPUT_PATH, "labels.csv"), index=False)
 
+def are_labels_equal(old_label, new_label):
+    return sum(new_label == old_label) == len(old_label)
+
+def check_label_equality(dataset, labels, img_id):
+    image = Image.open(os.path.join("data", dataset, "labels",
+                                    labels.iloc[img_id, 0].replace(".jpg",
+                                                                   ".png")))
+    old_label = np.array(mapillary_label_building(image, 66))
+    new_label = labels.iloc[img_id, 6:]
+    return {"invalid_label": np.where(new_label != old_label)[0],
+            "pixel_count": pd.Series(np.array(image).reshape([-1])).value_counts()}
+
+def mapillary_output_checking(dataset="training", nb_labels=1):
+    LABEL_PATH = os.path.join("data", dataset, "labels")
+    OUTPUT_PATH = os.path.join("data", dataset, "output")
+    new_labels = pd.read_csv(os.path.join(OUTPUT_PATH, "labels.csv"))
+    for new_filename in new_labels.new_name:
+        current_label = new_labels.query("new_name == @new_filename")
+        new_label = np.array(current_label.iloc[0,6:])
+        label_filename = current_label['old_name'].values[0]
+        img_filename = label_filename.replace(".jpg", ".png")
+        img_out = Image.open(os.path.join(LABEL_PATH, img_filename))
+        old_label = mapillary_label_building(img_out, nb_labels)
+        equality = are_labels_equal(old_label, new_label)
+        if equality:
+            logger.warning("""[{} set] Image {} OK""".format(dataset, new_filename))
+        else:
+            logger.warning("""[{} set] Image {} not OK:\
+            {}""".format(dataset, new_filename, current_label.iloc[0,:6]))
+            img_id = int(current_label['new_name'].values[0].split('.')[0])
+            logger.warning(check_label_equality(dataset, new_labels, img_id))
+        
 if __name__ == "__main__":
 
     ##################
@@ -132,3 +164,5 @@ if __name__ == "__main__":
     mapillary_data_preparation("training", len(labels))
     mapillary_data_preparation("validation", len(labels))
     mapillary_data_preparation("testing", len(labels))
+    mapillary_output_checking("training", len(labels))
+    mapillary_output_checking("validation", len(labels))
