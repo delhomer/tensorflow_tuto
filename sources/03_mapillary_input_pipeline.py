@@ -14,25 +14,24 @@ VALIDATION_OUTPUT_PATH = os.path.join("data", "validation", "output")
 IMAGE_HEIGHT  = 2448
 IMAGE_WIDTH   = 3264
 NUM_CHANNELS  = 3
-BATCH_SIZE    = 3
+BATCH_SIZE    = 10
 
 # Reading image file paths
 train_filepaths = os.listdir(TRAINING_INPUT_PATH)
 train_filepaths.sort()
 train_filepaths = [os.path.join(TRAINING_INPUT_PATH, fp)
                    for fp in train_filepaths]
+
 validation_filepaths = os.listdir(VALIDATION_INPUT_PATH)
 validation_filepaths.sort()
 validation_filepaths = [os.path.join(VALIDATION_INPUT_PATH, fp)
                         for fp in validation_filepaths]
 
 # Reading labels
-train_labels = pd.read_csv(os.path.join(TRAINING_OUTPUT_PATH, "labels.csv"),
-                           header=None, index_col=None).values
+train_labels = pd.read_csv(os.path.join(TRAINING_OUTPUT_PATH,
+                                        "labels.csv")).iloc[:,6:].values
 validation_labels = pd.read_csv(os.path.join(VALIDATION_OUTPUT_PATH,
-                                             "labels.csv"),
-                                header=None, index_col=None).values
-train_label_indices = 0
+                                             "labels.csv")).iloc[:,6:].values
 
 # Convert string file paths and integer labels into tensors
 train_images = ops.convert_to_tensor(train_filepaths, dtype=tf.string)
