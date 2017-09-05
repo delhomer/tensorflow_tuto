@@ -82,6 +82,8 @@ def mapillary_data_preparation(dataset="training", nb_labels=1):
         train_y = []
     for img_id, img_filename in enumerate(os.listdir(IMAGE_PATH)):
         img_in = Image.open(os.path.join(IMAGE_PATH, img_filename))
+        old_width, old_height = img_in.size
+        img_in = img_in.resize(IMG_SIZE, Image.NEAREST)
         new_img_name = "{:05d}.jpg".format(img_id)
         instance_name = os.path.join(INPUT_PATH, new_img_name)
         img_in.save(instance_name)
@@ -92,8 +94,6 @@ def mapillary_data_preparation(dataset="training", nb_labels=1):
             img_out = Image.open(os.path.join(LABEL_PATH, label_filename))
             img_out = img_out.resize(IMG_SIZE, Image.NEAREST)
             y = mapillary_label_building(img_out, nb_labels)
-            old_width, old_height = img_in.size
-            img_in = img_in.resize(IMG_SIZE)
             width_ratio = IMG_SIZE[0] / old_width
             height_ratio = IMG_SIZE[1] / old_height
             y.insert(0, height_ratio)
