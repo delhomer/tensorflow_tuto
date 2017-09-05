@@ -64,6 +64,23 @@ def size_inventory():
                       "width": widths,
                       "height": heights})
 
+def mapillary_image_size_plot(data, filename):
+    data.plot.hexbin(x="width", y="height", gridsize=25, bins='log')
+    plt.plot(data.width, data.height, 'b+', ms=0.75)
+    plt.legend(['images'], loc=2)
+    plt.plot([0, 8000], [0, 6000], 'r-', linestyle="dashed", linewidth=0.5)
+    plt.xlim(0, 7000)
+    plt.ylim(0, 5500)
+    plt.axvline(x=3264, color="grey", linewidth=0.5, linestyle="dotted")
+    plt.axhline(y=2448, color="grey", linewidth=0.5, linestyle="dotted")
+    plt.text(6000, 5000, "4:3", color="red")
+    plt.text(3500, 600, "width=3264", color="grey")
+    plt.text(700, 2600, "height=2448", color="grey")
+    plt.title("Number of images with respect to dimensions (log10-scale)",
+              fontsize=12)
+    plt.tight_layout()
+    plt.savefig(os.path.join("..", "images", filename))
+    
 def mapillary_label_building(filtered_image, nb_labels):
     filtered_data = np.array(filtered_image)
     avlble_labels = (pd.Series(filtered_data.reshape([-1]))
@@ -161,6 +178,9 @@ if __name__ == "__main__":
         config = json.load(config_file)
     labels = config['labels']
 
+    mapillary_image_sizes = size_inventory()
+    mapillary_image_sizes.to_csv("data/mapillary_image_sizes.csv")
+    mapillary_image_size_plot(mapillary_image_sizes)
     mapillary_data_preparation("training", len(labels))
     mapillary_data_preparation("validation", len(labels))
     mapillary_data_preparation("testing", len(labels))
