@@ -36,6 +36,8 @@ such as `heights` are `0.75*widths`; and image sizes are comprised between
 `600*800` and `3752*5376`. A first approximation could be to resize every
 images as the most encountered size (`2448*3264`).
 
+![Encoutered image size within the Mapillary dataset](./images/mapillary_image_sizes.png)
+
 #### Renaming
 
 For a sake of simplicity, the image files are arbitrarily renamed as
