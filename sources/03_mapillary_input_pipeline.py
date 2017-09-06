@@ -67,11 +67,9 @@ train_image_batch, train_label_batch, train_filename_batch = tf.train.batch(
     batch_size=BATCH_SIZE
     #,num_threads=1
 )
-validation_image_batch, validation_label_batch, validation_filename_batch = tf.train.batch(
-                                    [validation_image, validation_label, validation_input_queue[0]],
-                                    batch_size=BATCH_SIZE
-                                    #,num_threads=1
-                                    )
+validation_image_batch, validation_label_batch, validation_filename_batch =\
+tf.train.batch([validation_image, validation_label, validation_input_queue[0]],
+               batch_size=BATCH_SIZE) #,num_threads=1
 
 with tf.Session() as sess:
   # Initialize the variables
