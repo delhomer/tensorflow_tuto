@@ -330,11 +330,9 @@ with tf.Session() as sess:
     losses = []
     accuracies = []
     for index in range(initial_step, N_BATCHES * N_EPOCHS):
-        logger.info("Iteration {}".format(index))
         X_batch, Y_batch, filename_batch = sess.run([train_image_batch,
                                                      train_label_batch,
                                                      train_filename_batch])
-        logger.info("Batch data gathered!")
         learning_rate = MIN_LR + (MAX_LR - MIN_LR) * math.exp(-index/DECAY_SPEED)
         if index % SKIP_STEP == 0:
             loss_batch, accuracy_batch = sess.run([loss, accuracy], 
@@ -349,7 +347,6 @@ with tf.Session() as sess:
             saver.save(sess, '../checkpoints/convnet_mapillary/epoch', index)
         sess.run(optimizer, feed_dict={X: X_batch, Y: Y_batch, lrate:
                                        learning_rate, dropout: DROPOUT})
-        logger.info("Iteration {} finished!".format(index))
     logger.info("Optimization Finished!")
     logger.info("Total time: {:.2f} seconds".format(time.time() - start_time))
     
