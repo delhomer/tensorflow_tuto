@@ -153,7 +153,10 @@ utils.make_dir('../checkpoints/convnet_mapillary')
 
 with tf.name_scope("data"):
     # input X: 28x28 grayscale images, the first dimension (None) will index the images in the mini-batch
-    X = tf.placeholder(tf.float32, [None, 2448, 3264, 3], name='X')
+    X = tf.placeholder(tf.float32, name='X', [None,
+                                              IMAGE_HEIGHT,
+                                              IMAGE_WIDTH,
+                                              NUM_CHANNELS])
     Y = tf.placeholder(tf.float32, [None, N_CLASSES], name='Y')
 # variable learning rate
 lrate = tf.placeholder(tf.float32, name='learning_rate')
@@ -177,11 +180,11 @@ dropout = tf.placeholder(tf.float32, name='dropout')
 # First convolutional layer
 
 with tf.variable_scope('conv1') as scope:
-    # create kernel variable of dimension [5, 5, 1, 32]
+    # create kernel variable of dimension [5, 5, NUM_CHANNELS, L_C1]
     kernel = tf.get_variable('kernel',
-                             [5, 5, 3, L_C1],
+                             [5, 5, NUM_CHANNELS, L_C1],
                              initializer=tf.truncated_normal_initializer())
-    # create biases variable of dimension [32]
+    # create biases variable of dimension [L_C1]
     biases = tf.get_variable('biases',
                              [L_C1],
                              initializer=tf.constant_initializer(0.0))
@@ -189,9 +192,9 @@ with tf.variable_scope('conv1') as scope:
     # apply tf.nn.conv2d. strides [1, 1, 1, 1], padding is 'SAME'
     conv = tf.nn.conv2d(X, kernel, strides=[1, 1, 1, 1], padding='SAME')
     # apply relu on the sum of convolution output and biases
-    conv1 = tf.nn.relu(conv+biases, name=scope.name)
+    conv1 = tf.nn.relu(tf.add(conv, biases), name=scope.name)
 
-# Output is of dimension BATCH_SIZE * 2448 * 3264 * 32.
+# Output is of dimension BATCH_SIZE * IMAGE_HEIGHT * IMAGE_WIDTH * L_C1.
 
 # First pooling layer
 
@@ -203,20 +206,20 @@ with tf.variable_scope('pool1') as scope:
                            strides=[1, 4, 4, 1],
                            padding='SAME')
 
-# Output is of dimension BATCH_SIZE x 612 x 816 x 32
+# Output is of dimension BATCH_SIZE x 612 x 816 x L_C1
 
 # Second convolutional layer
 
 with tf.variable_scope('conv2') as scope:
-    # similar to conv1, except kernel now is of the size 5 x 5 x 32 x 64
+    # similar to conv1, except kernel now is of the size 5 x 5 x L_C1 x L_C2
     kernel = tf.get_variable('kernels', [5, 5, L_C1, L_C2], 
                         initializer=tf.truncated_normal_initializer())
     biases = tf.get_variable('biases', [L_C2],
                         initializer=tf.random_normal_initializer())
     conv = tf.nn.conv2d(pool1, kernel, strides=[1, 1, 1, 1], padding='SAME')
-    conv2 = tf.nn.relu(conv + biases, name=scope.name)
+    conv2 = tf.nn.relu(tf.add(conv, biases), name=scope.name)
 
-# Output is of dimension BATCH_SIZE x 612 x 816 x 64
+# Output is of dimension BATCH_SIZE x 612 x 816 x L_C2
 
 # Second pooling layer
 
@@ -227,20 +230,20 @@ with tf.variable_scope('pool2') as scope:
                            strides=[1, 4, 4, 1],
                            padding='SAME')
 
-# Output is of dimension BATCH_SIZE x 153 x 204 x 12
+# Output is of dimension BATCH_SIZE x 153 x 204 x L_C2
 
 # Second convolutional layer
 
 with tf.variable_scope('conv3') as scope:
-    # similar to conv1, except kernel now is of the size 5 x 5 x 32 x 64
+    # similar to conv1, except kernel now is of the size 5 x 5 x L_C2 x L_C3
     kernel = tf.get_variable('kernels', [5, 5, L_C2, L_C3], 
                         initializer=tf.truncated_normal_initializer())
     biases = tf.get_variable('biases', [L_C3],
                         initializer=tf.random_normal_initializer())
     conv = tf.nn.conv2d(pool2, kernel, strides=[1, 1, 1, 1], padding='SAME')
-    conv3 = tf.nn.relu(conv + biases, name=scope.name)
+    conv3 = tf.nn.relu(tf.add(conv, biases), name=scope.name)
 
-# Output is of dimension BATCH_SIZE x 153 x 204 x 16
+# Output is of dimension BATCH_SIZE x 153 x 204 x L_C3
 
 # Second pooling layer
 
@@ -251,12 +254,12 @@ with tf.variable_scope('pool3') as scope:
                            strides=[1, 3, 3, 1],
                            padding='SAME')
 
-# Output is of dimension BATCH_SIZE x 51 x 68 x 16
+# Output is of dimension BATCH_SIZE x 51 x 68 x L_C3
 
 # Fully-connected layer
 
 with tf.variable_scope('fc') as scope:
-    # use weight of dimension 51 * 68 * 16 x 1024
+    # use weight of dimension 51 * 68 * L_C3 x L_FC
     input_features = 51 * 68 * L_C3
     # create weights and biases
     w = tf.get_variable('weights', [input_features, L_FC],
