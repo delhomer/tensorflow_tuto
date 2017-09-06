@@ -23,6 +23,8 @@ from tensorflow.python.framework import dtypes
 import sys
 import time
 
+import utils
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 f = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -131,14 +133,8 @@ with tf.variable_scope("training_data_pipe") as scope:
 
 # Step 3: Prepare the checkpoint creation
 
-def make_dir(path):
-    """ Create a directory if there isn't one already. """
-    try:
-        os.mkdir(path)
-    except OSError:
-        pass
-make_dir('../checkpoints')
-make_dir('../checkpoints/convnet_mapillary')
+utils.make_dir('../checkpoints')
+utils.make_dir('../checkpoints/convnet_mapillary')
 
 # Step 4: create placeholders
 
