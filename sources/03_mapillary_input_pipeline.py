@@ -14,7 +14,7 @@ VALIDATION_OUTPUT_PATH = os.path.join("data", "validation", "output")
 IMAGE_HEIGHT  = 2448
 IMAGE_WIDTH   = 3264
 NUM_CHANNELS  = 3
-BATCH_SIZE    = 10
+BATCH_SIZE    = 100
 
 # Reading image file paths
 train_filepaths = os.listdir(TRAINING_INPUT_PATH)
