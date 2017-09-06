@@ -50,11 +50,12 @@ VALIDATION_OUTPUT_PATH = os.path.join("data", "validation", "output")
 IMAGE_HEIGHT  = 2448
 IMAGE_WIDTH   = 3264
 NUM_CHANNELS  = 3 # Colored images (RGB)
-L_C1 = 32
-L_C2 = 64
-L_FC = 512
+L_C1 = 8
+L_C2 = 12
+L_C3 = 16
+L_FC = 1024
 N_CLASSES = 66
-BATCH_SIZE = 50
+BATCH_SIZE = 2
 N_BATCHES = int(18000 / BATCH_SIZE) # TODO
 N_EPOCHS = 1
 MAX_LR = 0.003
@@ -193,7 +194,7 @@ with tf.variable_scope('conv1') as scope:
     # apply relu on the sum of convolution output and biases
     conv1 = tf.nn.relu(conv+biases, name=scope.name)
 
-# Output is of dimension BATCH_SIZE * 28 * 28 * 32.
+# Output is of dimension BATCH_SIZE * 2448 * 3264 * 32.
 
 # First pooling layer
 
@@ -201,11 +202,11 @@ with tf.variable_scope('pool1') as scope:
     # apply max pool with ksize [1, 2, 2, 1], and strides [1, 2, 2, 1], padding
     # 'SAME'
     pool1 = tf.nn.max_pool(conv1,
-                           ksize=[1, 2, 2, 1],
-                           strides=[1, 2, 2, 1],
+                           ksize=[1, 4, 4, 1],
+                           strides=[1, 4, 4, 1],
                            padding='SAME')
 
-# Output is of dimension BATCH_SIZE x 14 x 14 x 32
+# Output is of dimension BATCH_SIZE x 612 x 816 x 32
 
 # Second convolutional layer
 
@@ -218,33 +219,57 @@ with tf.variable_scope('conv2') as scope:
     conv = tf.nn.conv2d(pool1, kernel, strides=[1, 1, 1, 1], padding='SAME')
     conv2 = tf.nn.relu(conv + biases, name=scope.name)
 
-# Output is of dimension BATCH_SIZE x 14 x 14 x 64
+# Output is of dimension BATCH_SIZE x 612 x 816 x 64
 
 # Second pooling layer
 
 with tf.variable_scope('pool2') as scope:
     # similar to pool1
     pool2 = tf.nn.max_pool(conv2,
-                           ksize=[1, 2, 2, 1],
-                           strides=[1, 2, 2, 1],
+                           ksize=[1, 4, 4, 1],
+                           strides=[1, 4, 4, 1],
                            padding='SAME')
 
-# Output is of dimension BATCH_SIZE x 7 x 7 x 64
+# Output is of dimension BATCH_SIZE x 153 x 204 x 12
+
+# Second convolutional layer
+
+with tf.variable_scope('conv3') as scope:
+    # similar to conv1, except kernel now is of the size 5 x 5 x 32 x 64
+    kernel = tf.get_variable('kernels', [5, 5, L_C2, L_C3], 
+                        initializer=tf.truncated_normal_initializer())
+    biases = tf.get_variable('biases', [L_C3],
+                        initializer=tf.random_normal_initializer())
+    conv = tf.nn.conv2d(pool2, kernel, strides=[1, 1, 1, 1], padding='SAME')
+    conv3 = tf.nn.relu(conv + biases, name=scope.name)
+
+# Output is of dimension BATCH_SIZE x 153 x 204 x 16
+
+# Second pooling layer
+
+with tf.variable_scope('pool3') as scope:
+    # similar to pool1
+    pool3 = tf.nn.max_pool(conv3,
+                           ksize=[1, 3, 3, 1],
+                           strides=[1, 3, 3, 1],
+                           padding='SAME')
+
+# Output is of dimension BATCH_SIZE x 51 x 68 x 16
 
 # Fully-connected layer
 
 with tf.variable_scope('fc') as scope:
-    # use weight of dimension 7 * 7 * 64 x 1024
-    input_features = 7 * 7 * L_C2
+    # use weight of dimension 51 * 68 * 16 x 1024
+    input_features = 51 * 68 * L_C3
     # create weights and biases
     w = tf.get_variable('weights', [input_features, L_FC],
                         initializer=tf.truncated_normal_initializer())
     b = tf.get_variable('biases', [L_FC],
                         initializer=tf.constant_initializer(0.0))
     # reshape pool2 to 2 dimensional
-    pool2 = tf.reshape(pool2, [-1, input_features])
-    # apply relu on matmul of pool2 and w + b
-    fc = tf.nn.relu(tf.matmul(pool2, w) + b, name='relu')
+    pool3 = tf.reshape(pool3, [-1, input_features])
+    # apply relu on matmul of pool3 and w + b
+    fc = tf.nn.relu(tf.matmul(pool3, w) + b, name='relu')
     # apply dropout
     fc = tf.nn.dropout(fc, dropout, name='relu_dropout')
 
