@@ -9,6 +9,7 @@ import numpy as np
 import os
 import pandas as pd
 from PIL import Image
+import sys
 import tensorflow as tf
 
 DATASET = ["training", "validation", "testing"]
@@ -24,7 +25,12 @@ VALIDATION_INPUT_PATH = os.path.join("data", "validation", "input")
 VALIDATION_OUTPUT_PATH = os.path.join("data", "validation", "output")
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s -
+%(message)s")
+ch = logging.StreamHandler(sys.stdout)
+ch.setFormatter(format)
+logger.addHandler(ch)
 
 def make_dir(path):
     """ Create a directory if there isn't one already. """
@@ -41,6 +47,7 @@ def size_inventory():
     filenames = []
     datasets = []
     for dataset in DATASET:
+        logger.warning("Size inventory in {} dataset".format(dataset))
         for img_filename in os.listdir(os.path.join("data", dataset, "images")):
             for img_type in IMAGE_TYPES:
                 if dataset == "testing" and not img_type == "images":
@@ -172,17 +179,22 @@ if __name__ == "__main__":
     # on the image, 0 otherwise
     # np.array of shape [18000, 66] for training set, and [2000, 66] for
     # validation set
-        
+
+    logger.warning("Read config file...")
     # read in config file
     with open('data/config.json') as config_file:
         config = json.load(config_file)
     labels = config['labels']
 
+    logger.warning("Mapillary image size inventory...")
     mapillary_image_sizes = size_inventory()
     mapillary_image_sizes.to_csv("data/mapillary_image_sizes.csv")
-    mapillary_image_size_plot(mapillary_image_sizes)
+    mapillary_image_size_plot(mapillary_image_sizes,
+                              "../images/mapillary_image_sizes.png")
+    logger.warning("Mapillary data preparation...")
     mapillary_data_preparation("training", len(labels))
     mapillary_data_preparation("validation", len(labels))
     mapillary_data_preparation("testing", len(labels))
+    logger.warning("Mapillary output checking...")
     mapillary_output_checking("training", len(labels))
     mapillary_output_checking("validation", len(labels))
