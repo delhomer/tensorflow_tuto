@@ -61,7 +61,7 @@ N_CLASSES = 66
 BATCH_SIZE = 10
 N_BATCHES = int(18000 / BATCH_SIZE) # TODO
 N_EPOCHS = 1
-MAX_LR = 0.003
+START_LR = 0.01
 MIN_LR = 0.0001
 DECAY_SPEED = 1000.0
 DROPOUT = 0.75
@@ -153,13 +153,10 @@ utils.make_dir('../checkpoints/convnet_mapillary')
 
 with tf.name_scope("data"):
     # input X: 28x28 grayscale images, the first dimension (None) will index the images in the mini-batch
-    X = tf.placeholder(tf.float32, name='X', [None,
-                                              IMAGE_HEIGHT,
-                                              IMAGE_WIDTH,
-                                              NUM_CHANNELS])
+    X = tf.placeholder(tf.float32, [None, IMAGE_HEIGHT, IMAGE_WIDTH,
+                                    NUM_CHANNELS], name='X')
     Y = tf.placeholder(tf.float32, [None, N_CLASSES], name='Y')
-# variable learning rate
-lrate = tf.placeholder(tf.float32, name='learning_rate')
+
 # dropout proportion
 dropout = tf.placeholder(tf.float32, name='dropout')
 
@@ -306,6 +303,10 @@ with tf.name_scope('accuracy'):
 # Use Adam optimizer with decaying learning rate to minimize cost.
 with tf.name_scope("train"):
     global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
+    # variable learning rate
+    lrate = tf.train.exponential_decay(START_LR, global_step,
+                                       decay_steps=1000, decay_rate=0.95,
+                                       name='learning_rate')
     optimizer = tf.train.AdamOptimizer(lrate).minimize(loss, global_step=global_step)
 
 # Final step: running the neural network
@@ -336,20 +337,16 @@ with tf.Session() as sess:
         X_batch, Y_batch, filename_batch = sess.run([train_image_batch,
                                                      train_label_batch,
                                                      train_filename_batch])
-        learning_rate = MIN_LR + (MAX_LR - MIN_LR) * math.exp(-index/DECAY_SPEED)
         if index % SKIP_STEP == 0:
             loss_batch, accuracy_batch = sess.run([loss, accuracy], 
-                                feed_dict={X: X_batch, Y:Y_batch, lrate:
-                                           learning_rate, dropout: 1.0})
-            logger.info("""Step {}: loss = {:5.1f},\
-            accuracy = {:1.3f}""".format(index, loss_batch, accuracy_batch))
+                                feed_dict={X: X_batch, Y:Y_batch, dropout: 1.0})
+            logger.info("""Step {}: loss = {:5.1f}, accuracy = {:1.3f}""".format(index, loss_batch, accuracy_batch))
             epoches.append(index)
             losses.append(loss_batch)
             accuracies.append(accuracy_batch)
         if (index+1) % N_BATCHES == 0:
             saver.save(sess, '../checkpoints/convnet_mapillary/epoch', index)
-        sess.run(optimizer, feed_dict={X: X_batch, Y: Y_batch, lrate:
-                                       learning_rate, dropout: DROPOUT})
+        sess.run(optimizer, feed_dict={X: X_batch, Y: Y_batch, dropout: DROPOUT})
     logger.info("Optimization Finished!")
     logger.info("Total time: {:.2f} seconds".format(time.time() - start_time))
     
@@ -370,3 +367,4 @@ with tf.Session() as sess:
     param_history = pd.read_csv("cnn_mapillary.csv", index_col=False)
     coord.request_stop()
     coord.join(threads)
+
