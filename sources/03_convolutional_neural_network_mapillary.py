@@ -223,50 +223,26 @@ with tf.variable_scope('conv2') as scope:
 with tf.variable_scope('pool2') as scope:
     # similar to pool1
     pool2 = tf.nn.max_pool(conv2,
-                           ksize=[1, 4, 4, 1],
-                           strides=[1, 4, 4, 1],
-                           padding='SAME')
-
-# Output is of dimension BATCH_SIZE x 153 x 204 x L_C2
-
-# Second convolutional layer
-
-with tf.variable_scope('conv3') as scope:
-    # similar to conv1, except kernel now is of the size 5 x 5 x L_C2 x L_C3
-    kernel = tf.get_variable('kernels', [5, 5, L_C2, L_C3], 
-                        initializer=tf.truncated_normal_initializer())
-    biases = tf.get_variable('biases', [L_C3],
-                        initializer=tf.random_normal_initializer())
-    conv = tf.nn.conv2d(pool2, kernel, strides=[1, 1, 1, 1], padding='SAME')
-    conv3 = tf.nn.relu(tf.add(conv, biases), name=scope.name)
-
-# Output is of dimension BATCH_SIZE x 153 x 204 x L_C3
-
-# Second pooling layer
-
-with tf.variable_scope('pool3') as scope:
-    # similar to pool1
-    pool3 = tf.nn.max_pool(conv3,
                            ksize=[1, 3, 3, 1],
                            strides=[1, 3, 3, 1],
                            padding='SAME')
 
-# Output is of dimension BATCH_SIZE x 51 x 68 x L_C3
+# Output is of dimension BATCH_SIZE x 153 x 204 x L_C2
 
 # Fully-connected layer
 
 with tf.variable_scope('fc') as scope:
-    # use weight of dimension 51 * 68 * L_C3 x L_FC
-    input_features = 51 * 68 * L_C3
+    # use weight of dimension 51 * 68 * L_C2 x L_FC
+    input_features = 51 * 68 * L_C2
     # create weights and biases
     w = tf.get_variable('weights', [input_features, L_FC],
                         initializer=tf.truncated_normal_initializer())
     b = tf.get_variable('biases', [L_FC],
                         initializer=tf.constant_initializer(0.0))
     # reshape pool2 to 2 dimensional
-    pool3 = tf.reshape(pool3, [-1, input_features])
-    # apply relu on matmul of pool3 and w + b
-    fc = tf.nn.relu(tf.matmul(pool3, w) + b, name='relu')
+    pool2 = tf.reshape(pool2, [-1, input_features])
+    # apply relu on matmul of pool2 and w + b
+    fc = tf.nn.relu(tf.matmul(pool2, w) + b, name='relu')
     # apply dropout
     fc = tf.nn.dropout(fc, dropout, name='relu_dropout')
 
