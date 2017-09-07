@@ -285,12 +285,13 @@ with tf.variable_scope('softmax_linear') as scope:
 
 # Use cross-entropy loss function (-sum(Y_i * log(Yi)) ), normalised for
 # batches of 100 images. TensorFlow provides the
-# softmax_cross_entropy_with_logits function to avoid numerical stability
+# sigmoid_cross_entropy_with_logits function to avoid numerical stability
 # problems with log(0) (which is NaN).
+# sigmoid instead of softmax as we are in a multilabel classification problem
 
 with tf.name_scope('loss'):
     # cross-entropy between predicted and real values    
-    entropy = tf.nn.softmax_cross_entropy_with_logits(labels=Y, logits=logits)
+    entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=Y, logits=logits)
     loss = tf.reduce_mean(entropy, name="loss")
 
 with tf.name_scope('accuracy'):
