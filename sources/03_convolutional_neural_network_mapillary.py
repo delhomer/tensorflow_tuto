@@ -71,6 +71,7 @@ MIN_LR = 0.0001
 DECAY_SPEED = 1000.0
 DROPOUT = 0.75
 SKIP_STEP = 10
+NETWORK_NAME = "cnn_mapillary"
 
 # Step 2: data recovering
 
@@ -140,7 +141,7 @@ with tf.variable_scope("training_data_pipe") as scope:
 # Step 3: Prepare the checkpoint creation
 
 utils.make_dir('../checkpoints')
-utils.make_dir('../checkpoints/convnet_mapillary')
+utils.make_dir('../checkpoints/'+NETWORK_NAME)
 
 # Step 4: create placeholders
 
@@ -276,14 +277,14 @@ with tf.name_scope("train"):
 with tf.Session() as sess:
     # Initialize the tensorflow variables
     # To visualize using TensorBoard
-    # tensorboard --logdir="../graphs/convnet_mapillary" --port 6006)
+    # tensorboard --logdir="../graphs/"+NETWORK_NAME --port 6006)
     sess.run(tf.global_variables_initializer())
     # Declare a saver instance and a summary writer to store the trained network
     saver = tf.train.Saver()
-    writer = tf.summary.FileWriter('../graphs/convnet_mapillary', sess.graph)
+    writer = tf.summary.FileWriter('../graphs/'+NETWORK_NAME, sess.graph)
     initial_step = global_step.eval(session=sess)
     # Create folders to store checkpoints
-    ckpt = tf.train.get_checkpoint_state(os.path.dirname('../checkpoints/convnet_mapillary/checkpoint'))
+    ckpt = tf.train.get_checkpoint_state(os.path.dirname('../checkpoints/'+NETWORK_NAME+'/checkpoint'))
     # If that checkpoint exists, restore from checkpoint
     if ckpt and ckpt.model_checkpoint_path:
         saver.restore(sess, ckpt.model_checkpoint_path)
@@ -308,7 +309,7 @@ with tf.Session() as sess:
             losses.append(loss_batch)
             accuracies.append(accuracy_batch)
         if (index+1) % N_BATCHES == 0:
-            saver.save(sess, '../checkpoints/convnet_mapillary/epoch', index)
+            saver.save(sess, '../checkpoints/'+NETWORK_NAME+'/epoch', index)
         sess.run(optimizer, feed_dict={X: X_batch, Y: Y_batch, dropout: DROPOUT})
     logger.info("Optimization Finished!")
     logger.info("Total time: {:.2f} seconds".format(time.time() - start_time))
@@ -318,9 +319,12 @@ with tf.Session() as sess:
                                   "accuracy":accuracies})
     param_history = param_history.set_index("epoch")
     if initial_step == 0:
-        param_history.to_csv("cnn_mapillary.csv", index=True)
+        param_history.to_csv(NETWORK_NAME+".csv", index=True)
     else:
-        param_history.to_csv("cnn_mapillary.csv", index=True, mode='a', header=False)
+        param_history.to_csv(NETWORK_NAME+".csv",
+                             index=True,
+                             mode='a',
+                             header=False)
     # Stop the threads used during the process
     coord.request_stop()
     coord.join(threads)
