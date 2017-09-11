@@ -52,8 +52,15 @@ IMAGE_HEIGHT  = IMG_SIZE[1]
 IMAGE_WIDTH   = IMG_SIZE[0]
 NUM_CHANNELS  = 3 # Colored images (RGB)
 L_C1 = 8
+K_C1 = 5
+STR_C1 = [1, 1, 1, 1]
+KS_P1 = [1, 4, 4, 1]
+STR_P1 = [1, 4, 4, 1]
 L_C2 = 12
-L_C3 = 16
+K_C2 = 5
+STR_C2 = [1, 1, 1, 1]
+KS_P2 = [1, 3, 3, 1]
+STR_P2 = [1, 3, 3, 1]
 L_FC = 1024
 N_CLASSES = 66
 BATCH_SIZE = 10
@@ -159,16 +166,16 @@ with tf.name_scope("data"):
 # First convolutional layer
 
 with tf.variable_scope('conv1') as scope:
-    # Create kernel variable of dimension [5, 5, NUM_CHANNELS, L_C1]
+    # Create kernel variable of dimension [K_C1, K_C1, NUM_CHANNELS, L_C1]
     kernel = tf.get_variable('kernel',
-                             [5, 5, NUM_CHANNELS, L_C1],
+                             [K_C1, K_C1, NUM_CHANNELS, L_C1],
                              initializer=tf.truncated_normal_initializer())
     # Create biases variable of dimension [L_C1]
     biases = tf.get_variable('biases',
                              [L_C1],
                              initializer=tf.constant_initializer(0.0))
     # Apply the image convolution
-    conv = tf.nn.conv2d(X, kernel, strides=[1, 1, 1, 1], padding='SAME')
+    conv = tf.nn.conv2d(X, kernel, strides=STR_C1, padding='SAME')
     # Apply relu on the sum of convolution output and biases
     conv1 = tf.nn.relu(tf.add(conv, biases), name=scope.name)
     # Output is of dimension BATCH_SIZE * IMAGE_HEIGHT * IMAGE_WIDTH * L_C1.
@@ -177,21 +184,18 @@ with tf.variable_scope('conv1') as scope:
 
 with tf.variable_scope('pool1') as scope:
     # Apply max pooling
-    pool1 = tf.nn.max_pool(conv1,
-                           ksize=[1, 4, 4, 1],
-                           strides=[1, 4, 4, 1],
-                           padding='SAME')
+    pool1 = tf.nn.max_pool(conv1, ksize=KS_P1, strides=STR_P1, padding='SAME')
     # Output is of dimension BATCH_SIZE x 612 x 816 x L_C1
 
 # Second convolutional layer
 
 with tf.variable_scope('conv2') as scope:
     # Similar to conv1, except kernel now is of the size 5 x 5 x L_C1 x L_C2
-    kernel = tf.get_variable('kernels', [5, 5, L_C1, L_C2], 
+    kernel = tf.get_variable('kernels', [K_C2, K_C2, L_C1, L_C2], 
                         initializer=tf.truncated_normal_initializer())
     biases = tf.get_variable('biases', [L_C2],
                         initializer=tf.random_normal_initializer())
-    conv = tf.nn.conv2d(pool1, kernel, strides=[1, 1, 1, 1], padding='SAME')
+    conv = tf.nn.conv2d(pool1, kernel, strides=STR_C2, padding='SAME')
     conv2 = tf.nn.relu(tf.add(conv, biases), name=scope.name)
     # Output is of dimension BATCH_SIZE x 612 x 816 x L_C2
 
@@ -199,25 +203,26 @@ with tf.variable_scope('conv2') as scope:
 
 with tf.variable_scope('pool2') as scope:
     # Similar to pool1
-    pool2 = tf.nn.max_pool(conv2,
-                           ksize=[1, 3, 3, 1],
-                           strides=[1, 3, 3, 1],
-                           padding='SAME')
+    pool2 = tf.nn.max_pool(conv2, ksize=KS_P2, strides=STR_P2, padding='SAME')
     # Output is of dimension BATCH_SIZE x 153 x 204 x L_C2
 
 # Fully-connected layer
 
-with tf.variable_scope('fc') as scope:
+with tf.variable_scope('reshaping') as scope:
     # Reshape pool2 to 2 dimensional
-    input_features = 51 * 68 * L_C2
-    pool2 = tf.reshape(pool2, [-1, input_features])
+    new_height = HEIGHT / (STR_C1[2]*STR_P1[2]*STR_C2[2]*STR_P2[2])
+    new_width = WIDTH / (STR_C1[1]*STR_P1[1]*STR_C2[1]*STR_P2[1])
+    input_features = new_height * new_width * L_C2
+    reshaped = tf.reshape(pool2, [-1, input_features])
+
+with tf.variable_scope('fc') as scope:
     # Create weights and biases
     w = tf.get_variable('weights', [input_features, L_FC],
                         initializer=tf.truncated_normal_initializer())
     b = tf.get_variable('biases', [L_FC],
                         initializer=tf.constant_initializer(0.0))
-    # Apply relu on matmul of pool2 and w + b
-    fc = tf.nn.relu(tf.matmul(pool2, w) + b, name='relu')
+    # Apply relu on matmul of reshaped and w + b
+    fc = tf.nn.relu(tf.add(tf.matmul(reshaped, w), b), name='relu')
     # Apply dropout
     dropout = tf.placeholder(tf.float32, name='dropout')
     fc = tf.nn.dropout(fc, dropout, name='relu_dropout')
