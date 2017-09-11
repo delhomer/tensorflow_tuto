@@ -272,7 +272,7 @@ with tf.name_scope('loss'):
 
 with tf.name_scope('accuracy'):
     # accuracy of the trained model, between 0 (worst) and 1 (best)
-    correct_prediction = tf.equal(tf.argmax(Y, 1), tf.argmax(Ypredict, 1))
+    correct_prediction = tf.equal(tf.round(Y), tf.round(Ypredict))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 # Step 7: Define training optimizer
