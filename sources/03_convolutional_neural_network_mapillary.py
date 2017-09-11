@@ -248,14 +248,14 @@ with tf.variable_scope('fc') as scope:
 
 # Output building
 
-with tf.variable_scope('softmax_linear') as scope:
-    # get logits without softmax you need to create weights and biases
+with tf.variable_scope('sigmoid_linear') as scope:
+    # get logits without sigmoid you need to create weights and biases
     w = tf.get_variable('weights', [L_FC, N_CLASSES],
                         initializer=tf.truncated_normal_initializer())
     b = tf.get_variable('biases', [N_CLASSES],
                         initializer=tf.random_normal_initializer())
     logits = tf.matmul(fc, w) + b
-    Ypredict = tf.nn.softmax(logits)
+    Ypredict = tf.nn.sigmoid(logits)
 
 # Step 6: loss function design
 
