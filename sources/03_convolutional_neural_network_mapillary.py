@@ -209,7 +209,8 @@ with tf.variable_scope('pool2') as scope:
 
 with tf.variable_scope('fc') as scope:
     # Reshape pool2 to 2 dimensional
-    pool2 = tf.reshape(pool2, [-1, 51 * 68 * L_C2])
+    input_features = 51 * 68 * L_C2
+    pool2 = tf.reshape(pool2, [-1, input_features])
     # Create weights and biases
     w = tf.get_variable('weights', [input_features, L_FC],
                         initializer=tf.truncated_normal_initializer())
