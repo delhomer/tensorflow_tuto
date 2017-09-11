@@ -210,8 +210,8 @@ with tf.variable_scope('pool2') as scope:
 
 with tf.variable_scope('reshaping') as scope:
     # Reshape pool2 to 2 dimensional
-    new_height = HEIGHT / (STR_C1[2]*STR_P1[2]*STR_C2[2]*STR_P2[2])
-    new_width = WIDTH / (STR_C1[1]*STR_P1[1]*STR_C2[1]*STR_P2[1])
+    new_height = IMAGE_HEIGHT / (STR_C1[2]*STR_P1[2]*STR_C2[2]*STR_P2[2])
+    new_width = IMAGE_WIDTH / (STR_C1[1]*STR_P1[1]*STR_C2[1]*STR_P2[1])
     input_features = new_height * new_width * L_C2
     reshaped = tf.reshape(pool2, [-1, input_features])
 
