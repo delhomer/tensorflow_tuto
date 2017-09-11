@@ -1,16 +1,15 @@
+# Raphael Delhome - september 2017
+
 # Convolutional Neural Network with Tensorflow
 
-# The goal of this notebook is to train a neural network model in order to read
+# The goal of this script is to train a neural network model in order to read
 # street scene images produced by Mapillary
 # (https://www.mapillary.com/dataset/vistas)
 
-# Although the notebook is divided into smaller steps, four main task will be
-# of interest: data recovering, network conception, optimization design and
-# model training.
+# Four main task will be of interest: data recovering, network conception,
+# optimization design and model training.
 
 # Step 0: module imports
-
-# Among necessary modules, there is of course Tensorflow
 
 import logging
 import math
@@ -22,7 +21,6 @@ from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
 import sys
 import time
-
 import utils
 
 logger = logging.getLogger(__name__)
@@ -139,37 +137,21 @@ utils.make_dir('../checkpoints/convnet_mapillary')
 
 # Step 4: create placeholders
 
-# In Tensorflow, placeholders refer to variables that will be fed each time the
-# model is run.
-
-# Each image in the MNIST data is of shape 28*28*1 (greyscale) therefore, each
-# image is represented with a 28*28*1 tensor; use None for shape so we can
-# change the batch_size once we've built the tensor graph. The resulting output
-# is a vector of N_CLASSES 0-1 values, the only '1' being the model prediction.
-
-# As we work with a decaying learning rate, this quantity is managed within a
-# placeholder. We'll be doing dropout for hidden layer so we'll need a
-# placeholder for the dropout probability too.
-
 with tf.name_scope("data"):
-    # input X: 28x28 grayscale images, the first dimension (None) will index the images in the mini-batch
     X = tf.placeholder(tf.float32, [None, IMAGE_HEIGHT, IMAGE_WIDTH,
                                     NUM_CHANNELS], name='X')
     Y = tf.placeholder(tf.float32, [None, N_CLASSES], name='Y')
 
-# dropout proportion
-dropout = tf.placeholder(tf.float32, name='dropout')
-
 # Step 5: model building
 
 # The model is composed of the following steps:
-
-# conv -> relu -> pool -> conv -> relu -> pool -> fully connected -> softmax
+# conv -> relu -> pool -> conv -> relu -> pool -> fully connected -> sigmoid
 # - conv: convolution between an input neuron and an image filter
 # - relu (REctified Linear Unit): neuron activation function
 # - pool: max pooling layer, that considers the maximal value in a n*n patch
 # - fully connected: full connection between two consecutive neuron layer, concretized by a matrix multiplication
-# - softmax: neuron activation function, associated with output
+# - sigmoid: neuron activation function, associated with output (multilabel
+# classification problem)
 
 # They represent its structure, and may be showed within graph with tensorboard
 # command.
@@ -177,131 +159,129 @@ dropout = tf.placeholder(tf.float32, name='dropout')
 # First convolutional layer
 
 with tf.variable_scope('conv1') as scope:
-    # create kernel variable of dimension [5, 5, NUM_CHANNELS, L_C1]
+    # Create kernel variable of dimension [5, 5, NUM_CHANNELS, L_C1]
     kernel = tf.get_variable('kernel',
                              [5, 5, NUM_CHANNELS, L_C1],
                              initializer=tf.truncated_normal_initializer())
-    # create biases variable of dimension [L_C1]
+    # Create biases variable of dimension [L_C1]
     biases = tf.get_variable('biases',
                              [L_C1],
                              initializer=tf.constant_initializer(0.0))
-    
-    # apply tf.nn.conv2d. strides [1, 1, 1, 1], padding is 'SAME'
+    # Apply the image convolution
     conv = tf.nn.conv2d(X, kernel, strides=[1, 1, 1, 1], padding='SAME')
-    # apply relu on the sum of convolution output and biases
+    # Apply relu on the sum of convolution output and biases
     conv1 = tf.nn.relu(tf.add(conv, biases), name=scope.name)
-
-# Output is of dimension BATCH_SIZE * IMAGE_HEIGHT * IMAGE_WIDTH * L_C1.
+    # Output is of dimension BATCH_SIZE * IMAGE_HEIGHT * IMAGE_WIDTH * L_C1.
 
 # First pooling layer
 
 with tf.variable_scope('pool1') as scope:
-    # apply max pool with ksize [1, 2, 2, 1], and strides [1, 2, 2, 1], padding
-    # 'SAME'
+    # Apply max pooling
     pool1 = tf.nn.max_pool(conv1,
                            ksize=[1, 4, 4, 1],
                            strides=[1, 4, 4, 1],
                            padding='SAME')
-
-# Output is of dimension BATCH_SIZE x 612 x 816 x L_C1
+    # Output is of dimension BATCH_SIZE x 612 x 816 x L_C1
 
 # Second convolutional layer
 
 with tf.variable_scope('conv2') as scope:
-    # similar to conv1, except kernel now is of the size 5 x 5 x L_C1 x L_C2
+    # Similar to conv1, except kernel now is of the size 5 x 5 x L_C1 x L_C2
     kernel = tf.get_variable('kernels', [5, 5, L_C1, L_C2], 
                         initializer=tf.truncated_normal_initializer())
     biases = tf.get_variable('biases', [L_C2],
                         initializer=tf.random_normal_initializer())
     conv = tf.nn.conv2d(pool1, kernel, strides=[1, 1, 1, 1], padding='SAME')
     conv2 = tf.nn.relu(tf.add(conv, biases), name=scope.name)
-
-# Output is of dimension BATCH_SIZE x 612 x 816 x L_C2
+    # Output is of dimension BATCH_SIZE x 612 x 816 x L_C2
 
 # Second pooling layer
 
 with tf.variable_scope('pool2') as scope:
-    # similar to pool1
+    # Similar to pool1
     pool2 = tf.nn.max_pool(conv2,
                            ksize=[1, 3, 3, 1],
                            strides=[1, 3, 3, 1],
                            padding='SAME')
-
-# Output is of dimension BATCH_SIZE x 153 x 204 x L_C2
+    # Output is of dimension BATCH_SIZE x 153 x 204 x L_C2
 
 # Fully-connected layer
 
 with tf.variable_scope('fc') as scope:
-    # use weight of dimension 51 * 68 * L_C2 x L_FC
-    input_features = 51 * 68 * L_C2
-    # create weights and biases
+    # Reshape pool2 to 2 dimensional
+    pool2 = tf.reshape(pool2, [-1, 51 * 68 * L_C2])
+    # Create weights and biases
     w = tf.get_variable('weights', [input_features, L_FC],
                         initializer=tf.truncated_normal_initializer())
     b = tf.get_variable('biases', [L_FC],
                         initializer=tf.constant_initializer(0.0))
-    # reshape pool2 to 2 dimensional
-    pool2 = tf.reshape(pool2, [-1, input_features])
-    # apply relu on matmul of pool2 and w + b
+    # Apply relu on matmul of pool2 and w + b
     fc = tf.nn.relu(tf.matmul(pool2, w) + b, name='relu')
-    # apply dropout
+    # Apply dropout
+    dropout = tf.placeholder(tf.float32, name='dropout')
     fc = tf.nn.dropout(fc, dropout, name='relu_dropout')
 
 # Output building
 
 with tf.variable_scope('sigmoid_linear') as scope:
-    # get logits without sigmoid you need to create weights and biases
+    # Create weights and biases for the final fully-connected layer
     w = tf.get_variable('weights', [L_FC, N_CLASSES],
                         initializer=tf.truncated_normal_initializer())
     b = tf.get_variable('biases', [N_CLASSES],
                         initializer=tf.random_normal_initializer())
+    # Compute logits through a simple linear combination
     logits = tf.matmul(fc, w) + b
+    # Compute predicted outputs with sigmoid function
     Ypredict = tf.nn.sigmoid(logits)
 
 # Step 6: loss function design
 
 # Use cross-entropy loss function (-sum(Y_i * log(Yi)) ), normalised for
-# batches of 100 images. TensorFlow provides the
+# batches of BATCH_SIZE images. TensorFlow provides the
 # sigmoid_cross_entropy_with_logits function to avoid numerical stability
 # problems with log(0) (which is NaN).
-# sigmoid instead of softmax as we are in a multilabel classification problem
+# We use sigmoid instead of softmax as we are in a multilabel classification
+# problem
 
 with tf.name_scope('loss'):
-    # cross-entropy between predicted and real values    
+    # Cross-entropy between predicted and real values    
     entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=Y, logits=logits)
     loss = tf.reduce_mean(entropy, name="loss")
 
 with tf.name_scope('accuracy'):
-    # accuracy of the trained model, between 0 (worst) and 1 (best)
+    # A prediction is correct when the rounded predicted output is equal to Y
     correct_prediction = tf.equal(tf.round(Y), tf.round(Ypredict))
+    # Accuracy of the trained model, between 0 (worst) and 1 (best)
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 # Step 7: Define training optimizer
 
-# Use Adam optimizer with decaying learning rate to minimize cost.
 with tf.name_scope("train"):
     global_step = tf.Variable(0, dtype=tf.int32, trainable=False, name='global_step')
-    # variable learning rate
+    # Variable learning rate
     lrate = tf.train.exponential_decay(START_LR, global_step,
                                        decay_steps=1000, decay_rate=0.95,
                                        name='learning_rate')
+    # Use Adam optimizer with decaying learning rate to minimize cost.
     optimizer = tf.train.AdamOptimizer(lrate).minimize(loss, global_step=global_step)
 
 # Final step: running the neural network
 
 with tf.Session() as sess:
+    # Initialize the tensorflow variables
+    # To visualize using TensorBoard
+    # tensorboard --logdir="../graphs/convnet_mapillary" --port 6006)
     sess.run(tf.global_variables_initializer())
-    # to visualize using TensorBoard (tensorboard --logdir="../graphs/convnet_mapillary"
-    # --port 6006)
+    # Declare a saver instance and a summary writer to store the trained network
     saver = tf.train.Saver()
     writer = tf.summary.FileWriter('../graphs/convnet_mapillary', sess.graph)
-    ##### You have to create folders to store checkpoints
+    initial_step = global_step.eval(session=sess)
+    # Create folders to store checkpoints
     ckpt = tf.train.get_checkpoint_state(os.path.dirname('../checkpoints/convnet_mapillary/checkpoint'))
-    # if that checkpoint exists, restore from checkpoint
+    # If that checkpoint exists, restore from checkpoint
     if ckpt and ckpt.model_checkpoint_path:
         saver.restore(sess, ckpt.model_checkpoint_path)
-
-    initial_step = global_step.eval(session=sess)
-
+    # Initialize threads to begin batching operations
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
 
@@ -327,8 +307,7 @@ with tf.Session() as sess:
     logger.info("Optimization Finished!")
     logger.info("Total time: {:.2f} seconds".format(time.time() - start_time))
     
-    # The results are stored into a pandas dataframe and saved onto the file
-    # system.
+    # The results are stored as a pandas dataframe and saved on the file system.
     param_history = pd.DataFrame({"epoch":epoches, "loss":losses,
                                   "accuracy":accuracies})
     param_history = param_history.set_index("epoch")
@@ -336,12 +315,6 @@ with tf.Session() as sess:
         param_history.to_csv("cnn_mapillary.csv", index=True)
     else:
         param_history.to_csv("cnn_mapillary.csv", index=True, mode='a', header=False)
-
-    # Then the data into this `csv` file is recovered. We do not consider the
-    # current `param_history` value, as it may represent only the last training
-    # steps, if the train just had been restored from a checkpoint. We use the
-    # results for plotting purpose.
-    param_history = pd.read_csv("cnn_mapillary.csv", index_col=False)
+    # Stop the threads used during the process
     coord.request_stop()
     coord.join(threads)
-
