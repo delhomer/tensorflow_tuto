@@ -27,7 +27,7 @@ import utils
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-f = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+f = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(f)
 logger.addHandler(ch)
