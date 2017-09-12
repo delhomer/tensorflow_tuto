@@ -76,68 +76,39 @@ NETWORK_NAME = "cnn_mapillary"
 
 # Step 2: data recovering
 
-with tf.variable_scope("training_data_pipe") as scope:
-    # Reading image file paths
-    train_filepaths = os.listdir(TRAINING_INPUT_PATH)
-    train_filepaths.sort()
-    train_filepaths = [os.path.join(TRAINING_INPUT_PATH, fp) for fp in train_filepaths]
-    train_images = ops.convert_to_tensor(train_filepaths, dtype=tf.string,
-                                         name="train_images")
-    # Reading labels
-    train_labels = pd.read_csv(os.path.join(TRAINING_OUTPUT_PATH,
-                                            "labels.csv")).iloc[:,6:].values
-    train_labels = ops.convert_to_tensor(train_labels, dtype=tf.int16,
-                                         name="train_labels")
-    # Create input queues
-    train_input_queue = tf.train.slice_input_producer([train_images,
-                                                       train_labels],
-                                                      shuffle=False)
-    # Process path and string tensor into an image and a label
-    train_file_content = tf.read_file(train_input_queue[0])
-    train_image = tf.image.decode_jpeg(train_file_content, channels=NUM_CHANNELS)
-    train_image.set_shape([IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS])
-    train_label = train_input_queue[1]
-    # Collect batches of images before processing
-    train_image_batch, train_label_batch, train_filename_batch = tf.train.batch(
-        [train_image,
-         train_label,
-         train_input_queue[0]],
-        batch_size=BATCH_SIZE,
-        num_threads=4
-    )
+def prepare_data(height, width, n_channels, batch_size, dataset_type, scope_name):
+    INPUT_PATH = os.path.join("data", dataset_type, "input")
+    OUTPUT_PATH = os.path.join("data", dataset_type, "output")
+    with tf.variable_scope(scope_name) as scope:
+        # Reading image file paths
+        filepaths = os.listdir(INPUT_PATH)
+        filepaths.sort()
+        filepaths = [os.path.join(INPUT_PATH, fp) for fp in filepaths]
+        images = ops.convert_to_tensor(filepaths, dtype=tf.string,
+                                       name=dataset_type+"_images")
+        # Reading labels
+        labels = (pd.read_csv(os.path.join(OUTPUT_PATH, "labels.csv"))
+                  .iloc[:,6:].values)
+        labels = ops.convert_to_tensor(labels, dtype=tf.int16,
+                                       name=dataset_type+"_labels")
+        # Create input queues
+        input_queue = tf.train.slice_input_producer([images, labels],
+                                                    shuffle=False)
+        # Process path and string tensor into an image and a label
+        file_content = tf.read_file(input_queue[0])
+        image = tf.image.decode_jpeg(file_content, channels=n_channels)
+        image.set_shape([height, width, n_channels])
+        label = input_queue[1]
+        # Collect batches of images before processing
+        return tf.train.batch([image, label, input_queue[0]],
+                              batch_size=batch_size,
+                              num_threads=4)
 
-with tf.variable_scope("training_data_pipe") as scope:
-    # Reading image file paths
-    validation_filepaths = os.listdir(VALIDATION_INPUT_PATH)
-    validation_filepaths.sort()
-    validation_filepaths = [os.path.join(VALIDATION_INPUT_PATH, fp)
-                            for fp in validation_filepaths]
-    validation_images = ops.convert_to_tensor(validation_filepaths,
-                                              dtype=tf.string,
-                                              name="validation_images")
-    # Reading labels
-    validation_labels = pd.read_csv(os.path.join(VALIDATION_OUTPUT_PATH,
-                                                 "labels.csv")).iloc[:,6:].values
-    validation_labels = ops.convert_to_tensor(validation_labels,
-                                              dtype=tf.int16,
-                                              name="validation_images")
-    # Create input queues
-    validation_input_queue = tf.train.slice_input_producer([validation_images,
-                                                            validation_labels],
-                                                           shuffle=False)
-    # Process path and string tensor into an image and a label
-    validation_file_content = tf.read_file(validation_input_queue[0])
-    validation_image = tf.image.decode_jpeg(validation_file_content,
-                                            channels=NUM_CHANNELS)
-    validation_image.set_shape([IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS])
-    validation_label = validation_input_queue[1]
-    # Collect batches of images before processing
-    validation_image_batch, validation_label_batch, validation_filename_batch =\
-    tf.train.batch([validation_image,
-                    validation_label,
-                    validation_input_queue[0]],
-                   batch_size=BATCH_SIZE,
-                   num_threads=4)
+train_image_batch, train_label_batch, train_filename_batch = \
+prepare_data(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS, BATCH_SIZE, "training", "training_data_pipe")
+validation_image_batch, validation_label_batch, validation_filename_batch =\
+prepare_data(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS, BATCH_SIZE,
+                 "validation", "validation_data_pipe")
 
 # Step 3: Prepare the checkpoint creation
 
