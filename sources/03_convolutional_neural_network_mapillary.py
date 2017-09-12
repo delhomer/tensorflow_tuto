@@ -35,7 +35,8 @@ logger.addHandler(ch)
 # Define paramaters for the model:
 # - relative paths to data
 # - image dimensions (width, height, number of channels)
-# - hidden layer depth (number of channel per convolutional and fully connected layer)
+# - hidden layer depth (number of channel per convolutional and fully connected
+# layer), kernel dimension, conv layer stride, max pool layer ksize and stride
 # - number of output classes
 # - number of images per batch
 # - number of epochs (one epoch = all images have been used for training)
