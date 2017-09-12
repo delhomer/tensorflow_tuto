@@ -117,10 +117,10 @@ utils.make_dir('../checkpoints/'+NETWORK_NAME)
 
 # Step 4: create placeholders
 
-with tf.name_scope("data"):
-    X = tf.placeholder(tf.float32, [None, IMAGE_HEIGHT, IMAGE_WIDTH,
-                                    NUM_CHANNELS], name='X')
-    Y = tf.placeholder(tf.float32, [None, N_CLASSES], name='Y')
+X = tf.placeholder(tf.float32, [None, IMAGE_HEIGHT, IMAGE_WIDTH,
+                                NUM_CHANNELS], name='X')
+Y = tf.placeholder(tf.float32, [None, N_CLASSES], name='Y')
+dropout = tf.placeholder(tf.float32, name='dropout')
 
 # Step 5: model building
 
@@ -200,7 +200,7 @@ with tf.variable_scope('sigmoid_linear') as scope:
     b = tf.get_variable('biases', [N_CLASSES],
                         initializer=tf.random_normal_initializer())
     # Compute logits through a simple linear combination
-    logits = tf.matmul(fc, w) + b
+    logits = tf.add(tf.matmul(fc1, w), b)
     # Compute predicted outputs with sigmoid function
     Ypredict = tf.nn.sigmoid(logits)
 
