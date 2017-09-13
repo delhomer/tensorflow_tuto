@@ -18,7 +18,7 @@ ch.setFormatter(format)
 logger.addHandler(ch)
 
 DATASET = ["training", "validation", "testing"]
-IMG_SIZE = (816, 612)
+IMG_SIZE = (768, 576) # easy decomposition: (4, 3) * 3 * 2 * 2 * 2 * 2 * 2 * 2
 IMAGE_TYPES = ["images", "instances", "labels"]
 TRAINING_IMAGE_PATH = os.path.join("data", "training", "images")
 TRAINING_LABEL_PATH = os.path.join("data", "training", "labels")
