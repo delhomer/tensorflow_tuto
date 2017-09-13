@@ -3,6 +3,8 @@ import json
 import numpy as np
 import pandas as pd
 
+import utils
+
 # Basic definitions
 conv_layer_1_depth = [8, 16]
 conv_layer_2_depth = [12, 24]
@@ -63,7 +65,7 @@ ed = list(itertools.compress(ed, fc_filter))
 print(len(ed))
 
 # Write a configuration file (json format) for each instance
-
+utils.make_dir("../models")
 for config in experimental_design:
     config_dict = dict()
     n_conv = n_pool = n_fullconn = 1
