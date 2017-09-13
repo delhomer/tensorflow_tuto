@@ -76,39 +76,12 @@ NETWORK_NAME = "cnn_mapillary"
 
 # Step 2: data recovering
 
-def prepare_data(height, width, n_channels, batch_size, dataset_type, scope_name):
-    INPUT_PATH = os.path.join("data", dataset_type, "input")
-    OUTPUT_PATH = os.path.join("data", dataset_type, "output")
-    with tf.variable_scope(scope_name) as scope:
-        # Reading image file paths
-        filepaths = os.listdir(INPUT_PATH)
-        filepaths.sort()
-        filepaths = [os.path.join(INPUT_PATH, fp) for fp in filepaths]
-        images = ops.convert_to_tensor(filepaths, dtype=tf.string,
-                                       name=dataset_type+"_images")
-        # Reading labels
-        labels = (pd.read_csv(os.path.join(OUTPUT_PATH, "labels.csv"))
-                  .iloc[:,6:].values)
-        labels = ops.convert_to_tensor(labels, dtype=tf.int16,
-                                       name=dataset_type+"_labels")
-        # Create input queues
-        input_queue = tf.train.slice_input_producer([images, labels],
-                                                    shuffle=False)
-        # Process path and string tensor into an image and a label
-        file_content = tf.read_file(input_queue[0])
-        image = tf.image.decode_jpeg(file_content, channels=n_channels)
-        image.set_shape([height, width, n_channels])
-        label = input_queue[1]
-        # Collect batches of images before processing
-        return tf.train.batch([image, label, input_queue[0]],
-                              batch_size=batch_size,
-                              num_threads=4)
-
 train_image_batch, train_label_batch, train_filename_batch = \
-prepare_data(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS, BATCH_SIZE, "training", "training_data_pipe")
+tensorflow_layers.prepare_data(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS,
+                               BATCH_SIZE, "training", "training_data_pipe")
 validation_image_batch, validation_label_batch, validation_filename_batch =\
-prepare_data(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS, BATCH_SIZE,
-                 "validation", "validation_data_pipe")
+tensorflow_layers.prepare_data(IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS,
+                               BATCH_SIZE, "validation", "validation_data_pipe")
 
 # Step 3: Prepare the checkpoint creation
 
