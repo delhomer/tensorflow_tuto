@@ -91,30 +91,13 @@ dropout = tf.placeholder(tf.float32, name='dropout')
 
 # Step 5: model building
 
-CONV_LAYER_COUNTER = 0
-POOL_LAYER_COUNTER = 0
-FULLCON_LAYER_COUNTER = 0
-
-conv1, CONV_LAYER_COUNTER = tensorflow_layers.conv_layer(X, NUM_CHANNELS, K_C1,
-                                                         L_C1, STR_C1,
-                                                         CONV_LAYER_COUNTER)
-pool1, POOL_LAYER_COUNTER = tensorflow_layers.maxpool_layer(conv1, KS_P1,
-                                                            STR_P1,
-                                                            POOL_LAYER_COUNTER)
-conv2, CONV_LAYER_COUNTER = tensorflow_layers.conv_layer(pool1, L_C1, K_C2,
-                                                         L_C2, STR_C2,
-                                                         CONV_LAYER_COUNTER)
-pool2, POOL_LAYER_COUNTER = tensorflow_layers.maxpool_layer(conv2, KS_P2,
-                                                            STR_P2,
-                                                            POOL_LAYER_COUNTER)
-fc1, FULLCON_LAYER_COUNTER = tensorflow_layers.fullconn_layer(pool2,
-                                                              IMAGE_HEIGHT,
-                                                              IMAGE_WIDTH,
-                                                              STR_C1, STR_P1,
-                                                              STR_C2, STR_P2,
-                                                              L_C2, L_FC,
-                                                              FULLCON_LAYER_COUNTER,
-                                                              dropout)
+conv1 = tensorflow_layers.conv_layer(X, NUM_CHANNELS, K_C1, L_C1, STR_C1, 1)
+pool1 = tensorflow_layers.maxpool_layer(conv1, KS_P1, STR_P1, 1)
+conv2 = tensorflow_layers.conv_layer(pool1, L_C1, K_C2, L_C2, STR_C2, 2)
+pool2 = tensorflow_layers.maxpool_layer(conv2, KS_P2, STR_P2, 2)
+fc1 = tensorflow_layers.fullconn_layer(pool2, IMAGE_HEIGHT, IMAGE_WIDTH,
+                                       STR_C1, STR_P1, STR_C2, STR_P2, L_C2,
+                                       L_FC1, dropout, 1)
 
 # Output building
 

@@ -35,9 +35,9 @@ def prepare_data(height, width, n_channels, batch_size, dataset_type, scope_name
                               num_threads=4)
 
 # Convolutional layer
-def conv_layer(input_layer, input_layer_depth, kernel_dim, layer_depth, conv_strides, counter):
-    counter = counter + 1
-    with tf.variable_scope('conv'+str(counter)) as scope:
+def conv_layer(input_layer, input_layer_depth, kernel_dim, layer_depth,
+               conv_strides, counter):
+    with tf.variable_scope('conv' + str(counter)) as scope:
         # Create kernel variable of dimension [K_C1, K_C1, NUM_CHANNELS, L_C1]
         kernel = tf.get_variable('kernel',
                                  [kernel_dim, kernel_dim,
@@ -52,14 +52,13 @@ def conv_layer(input_layer, input_layer_depth, kernel_dim, layer_depth, conv_str
                             padding='SAME')
         # Apply relu on the sum of convolution output and biases
         # Output is of dimension BATCH_SIZE * IMAGE_HEIGHT * IMAGE_WIDTH * L_C1.
-        return tf.nn.relu(tf.add(conv, biases), name=scope.name), counter
+        return tf.nn.relu(tf.add(conv, biases), name=scope.name)
 
 # Max-pooling layer
 def maxpool_layer(input_layer, pool_ksize, pool_strides, counter):
-    counter = counter + 1
-    with tf.variable_scope('pool'+str(counter)) as scope:
+    with tf.variable_scope('pool' + str(counter)) as scope:
         return tf.nn.max_pool(input_layer, ksize=pool_ksize,
-                               strides=pool_strides, padding='SAME'), counter
+                               strides=pool_strides, padding='SAME')
         # Output is of dimension BATCH_SIZE x 612 x 816 x L_C1
 
 # Fully-connected layer
@@ -69,9 +68,8 @@ def reshape(height, width, str_c1, str_p1, str_c2, str_p2, last_layer_depth):
     return new_height * new_width * last_layer_depth
 
 def fullconn_layer(input_layer, height, width, str_c1, str_p1, str_c2, str_p2,
-                   last_layer_depth, fc_layer_depth, counter, t_dropout):
-    counter = counter + 1
-    with tf.variable_scope('fc'+str(counter)) as scope:
+                   last_layer_depth, fc_layer_depth, t_dropout, counter):
+    with tf.variable_scope('fc' + str(counter)) as scope:
         fc_size = reshape(height, width, str_c1, str_p1, str_c2, str_p2,
                           last_layer_depth)
         reshaped = tf.reshape(input_layer, [-1, fc_size])
@@ -83,4 +81,4 @@ def fullconn_layer(input_layer, height, width, str_c1, str_p1, str_c2, str_p2,
         # Apply relu on matmul of reshaped and w + b
         fc = tf.nn.relu(tf.add(tf.matmul(reshaped, w), b), name='relu')
         # Apply dropout
-        return tf.nn.dropout(fc, t_dropout, name='relu_with_dropout'), counter
+        return tf.nn.dropout(fc, t_dropout, name='relu_with_dropout')
