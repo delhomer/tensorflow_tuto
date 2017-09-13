@@ -32,26 +32,13 @@ logger.addHandler(ch)
 
 # Step 1: parameter definition
 
-# Define paramaters for the model:
-# - relative paths to data
-# - image dimensions (width, height, number of channels)
-# - hidden layer depth (number of channel per convolutional and fully connected
-# layer), kernel dimension, conv layer stride, max pool layer ksize and stride
-# - number of output classes
-# - number of images per batch
-# - number of epochs (one epoch = all images have been used for training)
-# - decaying learning rate: fit the learning rate during training according to the convergence step (larger at the beginning, smaller at the end), the used formula is the following: min_lr + (max_lr-min_lr)*math.exp(-i/decay_speed), with i being the training iteration
-# - dropout, i.e. percentage of nodes that are briefly removed during training process
-# - printing frequency during training
-
-TRAINING_INPUT_PATH = os.path.join("data", "training", "input")
-TRAINING_OUTPUT_PATH = os.path.join("data", "training", "output")
-VALIDATION_INPUT_PATH = os.path.join("data", "validation", "input")
-VALIDATION_OUTPUT_PATH = os.path.join("data", "validation", "output")
+# image dimensions (width, height, number of channels)
 IMG_SIZE = (816, 612)
 IMAGE_HEIGHT  = IMG_SIZE[1]
 IMAGE_WIDTH   = IMG_SIZE[0]
 NUM_CHANNELS  = 3 # Colored images (RGB)
+# hidden layer depth (number of channel per convolutional and fully connected
+# layer), kernel dimension, conv layer stride, max pool layer ksize and stride
 L_C1 = 8
 K_C1 = 5
 STR_C1 = [1, 1, 1, 1]
@@ -62,16 +49,22 @@ K_C2 = 5
 STR_C2 = [1, 1, 1, 1]
 KS_P2 = [1, 3, 3, 1]
 STR_P2 = [1, 3, 3, 1]
-L_FC = 1024
+L_FC = 512
+# number of output classes
 N_CLASSES = 66
+# number of images per batch
 BATCH_SIZE = 10
 N_BATCHES = int(18000 / BATCH_SIZE) # TODO
+# number of epochs (one epoch = all images have been used for training)
 N_EPOCHS = 1
+# Starting learning rate (it moves following an exponential decay afterwards)
 START_LR = 0.01
-MIN_LR = 0.0001
-DECAY_SPEED = 1000.0
+# dropout, i.e. percentage of nodes that are briefly removed during training
+# process
 DROPOUT = 0.75
+# printing frequency during training
 SKIP_STEP = 10
+# Name of the convolutional neural network
 NETWORK_NAME = "cnn_mapillary"
 
 # Step 2: data recovering
