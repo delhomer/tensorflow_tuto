@@ -142,6 +142,7 @@ with tf.name_scope('accuracy'):
     correct_prediction = tf.equal(tf.round(Y), tf.round(Ypredict))
     # Accuracy of the trained model, between 0 (worst) and 1 (best)
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    bpmll_acc = bpmll.bp_mll_loss(Y, Ypredict)
 
 # Step 7: Define training optimizer
 
@@ -184,9 +185,9 @@ with tf.Session() as sess:
                                                      train_label_batch,
                                                      train_filename_batch])
         if index % SKIP_STEP == 0:
-            loss_batch, accuracy_batch = sess.run([loss, accuracy], 
+            loss_batch, accuracy_batch, acc2 = sess.run([loss, accuracy, bpmll_acc], 
                                 feed_dict={X: X_batch, Y:Y_batch, dropout: 1.0})
-            logger.info("""Step {}: loss = {:5.1f}, accuracy = {:1.3f}""".format(index, loss_batch, accuracy_batch))
+            logger.info("""Step {}: loss = {:5.3f}, accuracy = {:1.3f} (bpmll: {})""".format(index, loss_batch, accuracy_batch, acc2))
             epoches.append(index)
             losses.append(loss_batch)
             accuracies.append(accuracy_batch)
