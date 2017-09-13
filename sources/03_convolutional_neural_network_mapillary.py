@@ -206,15 +206,9 @@ with tf.variable_scope('sigmoid_linear') as scope:
 
 # Step 6: loss function design
 
-# Use cross-entropy loss function (-sum(Y_i * log(Yi)) ), normalised for
-# batches of BATCH_SIZE images. TensorFlow provides the
-# sigmoid_cross_entropy_with_logits function to avoid numerical stability
-# problems with log(0) (which is NaN).
-# We use sigmoid instead of softmax as we are in a multilabel classification
-# problem
-
 with tf.name_scope('loss'):
-    # Cross-entropy between predicted and real values    
+    # Cross-entropy between predicted and real values: we use sigmoid instead
+    # of softmax as we are in a multilabel classification problem
     entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=Y, logits=logits)
     loss = tf.reduce_mean(entropy, name="loss")
 
