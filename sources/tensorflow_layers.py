@@ -1,5 +1,6 @@
 # Raphael Delhome - september 2017
 
+import numpy as np
 import os
 import pandas as pd
 import tensorflow as tf
@@ -62,19 +63,17 @@ def maxpool_layer(input_layer, pool_ksize, pool_strides, counter):
         # Output is of dimension BATCH_SIZE x 612 x 816 x L_C1
 
 # Fully-connected layer
-def reshape(height, width, str_c1, str_p1, str_c2, str_p2, last_layer_depth):
-    new_height = int(height / (str_c1[2]*str_p1[2]*str_c2[2]*str_p2[2]))
-    new_width = int(width / (str_c1[1]*str_p1[1]*str_c2[1]*str_p2[1]))
+def layer_dim(height, width, layer_coefs, last_layer_depth):
+    new_height = int(height / np.prod(np.array(layer_coefs)[:,2]))
+    new_width = int(width / np.prod(np.array(layer_coefs)[:,1]))
     return new_height * new_width * last_layer_depth
 
-def fullconn_layer(input_layer, height, width, str_c1, str_p1, str_c2, str_p2,
-                   last_layer_depth, fc_layer_depth, t_dropout, counter):
+def fullconn_layer(input_layer, height, width, last_layer_dim,
+                   fc_layer_depth, t_dropout, counter):
     with tf.variable_scope('fc' + str(counter)) as scope:
-        fc_size = reshape(height, width, str_c1, str_p1, str_c2, str_p2,
-                          last_layer_depth)
-        reshaped = tf.reshape(input_layer, [-1, fc_size])
+        reshaped = tf.reshape(input_layer, [-1, last_layer_dim])
         # Create weights and biases
-        w = tf.get_variable('weights', [fc_size, fc_layer_depth],
+        w = tf.get_variable('weights', [last_layer_dim, fc_layer_depth],
                             initializer=tf.truncated_normal_initializer())
         b = tf.get_variable('biases', [fc_layer_depth],
                             initializer=tf.constant_initializer(0.0))

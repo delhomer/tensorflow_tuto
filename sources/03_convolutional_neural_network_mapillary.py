@@ -11,6 +11,7 @@
 
 # Step 0: module imports
 
+import json
 import logging
 import math
 import matplotlib.pyplot as plt
@@ -34,23 +35,39 @@ logger.addHandler(ch)
 # Step 1: parameter definition
 
 # image dimensions (width, height, number of channels)
-IMG_SIZE = (816, 612)
+IMG_SIZE = (768, 576)
 IMAGE_HEIGHT  = IMG_SIZE[1]
 IMAGE_WIDTH   = IMG_SIZE[0]
 NUM_CHANNELS  = 3 # Colored images (RGB)
+
 # hidden layer depth (number of channel per convolutional and fully connected
 # layer), kernel dimension, conv layer stride, max pool layer ksize and stride
-L_C1 = 8
-K_C1 = 5
-STR_C1 = [1, 1, 1, 1]
-KS_P1 = [1, 4, 4, 1]
-STR_P1 = [1, 4, 4, 1]
-L_C2 = 12
-K_C2 = 5
-STR_C2 = [1, 1, 1, 1]
-KS_P2 = [1, 3, 3, 1]
-STR_P2 = [1, 3, 3, 1]
-L_FC = 512
+config_file_name = os.path.join("..", "models", "cnn_mapil_2_0_2_1_1_0.json")
+with open(config_file_name) as config_file:
+    cnn_hyperparam = json.load(config_file)
+L_C1 = cnn_hyperparam["conv1"]["depth"]
+K_C1 = cnn_hyperparam["conv1"]["kernel_size"]
+STR_C1 = cnn_hyperparam["conv1"]["strides"]
+KS_P1 = cnn_hyperparam["pool1"]["kernel_size"]
+STR_P1 = cnn_hyperparam["pool1"]["strides"]
+if "conv2" in cnn_hyperparam.keys():
+    L_C2 = cnn_hyperparam["conv2"]["depth"]
+    K_C2 = cnn_hyperparam["conv2"]["kernel_size"]
+    STR_C2 = cnn_hyperparam["conv2"]["strides"]
+if "pool2" in cnn_hyperparam.keys():
+    KS_P2 = cnn_hyperparam["pool2"]["kernel_size"]
+    STR_P2 = cnn_hyperparam["pool2"]["strides"]
+if "conv3" in cnn_hyperparam.keys():
+    L_C3 = cnn_hyperparam["conv3"]["depth"]
+    K_C3 = cnn_hyperparam["conv3"]["kernel_size"]
+    STR_C3 = cnn_hyperparam["conv3"]["strides"]
+if "pool3" in cnn_hyperparam.keys():
+    KS_P3 = cnn_hyperparam["pool3"]["kernel_size"]
+    STR_P3 = cnn_hyperparam["pool3"]["strides"]
+L_FC1 = cnn_hyperparam["fullconn1"]["depth"]
+if "fullconn2" in cnn_hyperparam.keys():
+    L_FC2 = cnn_hyperparam["fullconn2"]["depth"]
+
 # number of output classes
 N_CLASSES = 66
 # number of images per batch
@@ -93,17 +110,38 @@ dropout = tf.placeholder(tf.float32, name='dropout')
 
 conv1 = tensorflow_layers.conv_layer(X, NUM_CHANNELS, K_C1, L_C1, STR_C1, 1)
 pool1 = tensorflow_layers.maxpool_layer(conv1, KS_P1, STR_P1, 1)
-conv2 = tensorflow_layers.conv_layer(pool1, L_C1, K_C2, L_C2, STR_C2, 2)
-pool2 = tensorflow_layers.maxpool_layer(conv2, KS_P2, STR_P2, 2)
-fc1 = tensorflow_layers.fullconn_layer(pool2, IMAGE_HEIGHT, IMAGE_WIDTH,
-                                       STR_C1, STR_P1, STR_C2, STR_P2, L_C2,
-                                       L_FC1, dropout, 1)
+last_pool = pool1
+last_layer_dim = L_C1
+layer_coefs = [STR_C1, STR_P1]
+if "conv2" in cnn_hyperparam.keys():
+    conv2 = tensorflow_layers.conv_layer(pool1, L_C1, K_C2, L_C2, STR_C2, 2)
+if "pool2" in cnn_hyperparam.keys():
+    pool2 = tensorflow_layers.maxpool_layer(conv2, KS_P2, STR_P2, 2)
+    last_pool = pool2
+    last_layer_dim = L_C2
+    layer_coefs.append(STR_C2)
+    layer_coefs.append(STR_P2)
+if "conv3" in cnn_hyperparam.keys():
+    conv3 = tensorflow_layers.conv_layer(pool2, L_C2, K_C3, L_C3, STR_C3, 3)
+if "pool3" in cnn_hyperparam.keys():
+    pool3 = tensorflow_layers.maxpool_layer(conv3, KS_P3, STR_P3, 3)
+    last_pool = pool3
+    last_layer_dim = L_C3
+    layer_coefs.append(STR_C3)
+    layer_coefs.append(STR_P3)
+hidden_layer_dim = tensorflow_layers.layer_dim(IMAGE_HEIGHT, IMAGE_WIDTH,
+                                               layer_coefs, last_layer_dim)
+fc1 = tensorflow_layers.fullconn_layer(last_pool, IMAGE_HEIGHT, IMAGE_WIDTH,
+                                       hidden_layer_dim, L_FC1, dropout, 1)
+if "fullconn2" in cnn_hyperparam.keys():
+    fc2 = tensorflow_layers.fullconn_layer(fc1, IMAGE_HEIGHT, IMAGE_WIDTH,
+                                           L_FC1, L_FC2, dropout, 2)
 
 # Output building
 
 with tf.variable_scope('sigmoid_linear') as scope:
     # Create weights and biases for the final fully-connected layer
-    w = tf.get_variable('weights', [L_FC, N_CLASSES],
+    w = tf.get_variable('weights', [L_FC1, N_CLASSES],
                         initializer=tf.truncated_normal_initializer())
     b = tf.get_variable('biases', [N_CLASSES],
                         initializer=tf.random_normal_initializer())
