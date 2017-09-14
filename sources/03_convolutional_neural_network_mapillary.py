@@ -79,7 +79,7 @@ N_EPOCHS = 1
 START_LR = 0.01
 # dropout, i.e. percentage of nodes that are briefly removed during training
 # process
-DROPOUT = 0.75
+DROPOUT = 2/3.0
 # printing frequency during training
 SKIP_STEP = 10
 # Name of the convolutional neural network
@@ -174,7 +174,8 @@ with tf.name_scope("train"):
                                        decay_steps=1000, decay_rate=0.95,
                                        name='learning_rate')
     # Use Adam optimizer with decaying learning rate to minimize cost.
-    optimizer = tf.train.AdamOptimizer(lrate).minimize(loss, global_step=global_step)
+    optimizer = tf.train.AdamOptimizer(lrate).minimize(loss,
+                                                       global_step=global_step)
 
 # Final step: running the neural network
 
