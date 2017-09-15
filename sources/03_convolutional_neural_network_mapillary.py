@@ -42,7 +42,9 @@ NUM_CHANNELS  = 3 # Colored images (RGB)
 
 # hidden layer depth (number of channel per convolutional and fully connected
 # layer), kernel dimension, conv layer stride, max pool layer ksize and stride
-config_file_name = os.path.join("..", "models", "cnn_mapil_2_0_2_1_1_0.json")
+# Name of the convolutional neural network
+NETWORK_NAME = "cnn_mapil_2_0_2_1_1_0"
+config_file_name = os.path.join("..", "models", NETWORK_NAME + ".json")
 with open(config_file_name) as config_file:
     cnn_hyperparam = json.load(config_file)
 L_C1 = cnn_hyperparam["conv1"]["depth"]
@@ -82,8 +84,6 @@ START_LR = 0.01
 DROPOUT = 2/3.0
 # printing frequency during training
 SKIP_STEP = 10
-# Name of the convolutional neural network
-NETWORK_NAME = "cnn_mapillary"
 
 # Step 2: data recovering
 
@@ -223,10 +223,12 @@ with tf.Session() as sess:
     param_history = pd.DataFrame({"epoch":epoches, "loss":losses,
                                   "accuracy":accuracies})
     param_history = param_history.set_index("epoch")
+    utils.make_dir(os.path.join("data", "results"))
+    result_file_name = os.path.join("data", "results", NETWORK_NAME + ".csv")
     if initial_step == 0:
-        param_history.to_csv(NETWORK_NAME+".csv", index=True)
+        param_history.to_csv(result_file_name, index=True)
     else:
-        param_history.to_csv(NETWORK_NAME+".csv",
+        param_history.to_csv(result_file_name,
                              index=True,
                              mode='a',
                              header=False)
