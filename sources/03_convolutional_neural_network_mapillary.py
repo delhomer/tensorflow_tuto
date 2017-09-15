@@ -74,7 +74,7 @@ if "fullconn2" in cnn_hyperparam.keys():
 # number of output classes
 N_CLASSES = 66
 # number of images per batch
-BATCH_SIZE = 10
+BATCH_SIZE = 20
 N_BATCHES = int(18000 / BATCH_SIZE) # TODO
 # number of epochs (one epoch = all images have been used for training)
 N_EPOCHS = 1
