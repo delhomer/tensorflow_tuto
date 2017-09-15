@@ -38,6 +38,17 @@ def make_dir(path):
     except OSError:
         pass
 
+def unnest(l):
+    """Unnest a list of lists, by splitting sublists and returning a simple list of scalar elements
+
+    Parameters
+    ----------
+    l: list
+        list of lists
+    
+    """
+    return [index for sublist in l for index in sublist]
+    
 def mapillary_label_building(filtered_image, nb_labels):
     filtered_data = np.array(filtered_image)
     avlble_labels = (pd.Series(filtered_data.reshape([-1]))
