@@ -22,6 +22,7 @@ import sys
 import time
 
 import bpmll # Multilabel classification loss
+import cnn_mapillary_dashboard
 import tensorflow_layers
 import utils
 
@@ -148,7 +149,8 @@ with tf.variable_scope('sigmoid_linear') as scope:
     # Compute logits through a simple linear combination
     logits = tf.add(tf.matmul(fc1, w), b)
     # Compute predicted outputs with sigmoid function
-    Ypredict = tf.nn.sigmoid(logits)
+    Y_raw_predict = tf.nn.sigmoid(logits)
+    Y_predict = tf.to_int32(Y_raw_predict)
 
 # Step 6: loss function design
 
@@ -157,13 +159,7 @@ with tf.name_scope('loss'):
     # of softmax as we are in a multilabel classification problem
     entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=Y, logits=logits)
     loss = tf.reduce_mean(entropy, name="loss")
-
-with tf.name_scope('accuracy'):
-    # A prediction is correct when the rounded predicted output is equal to Y
-    correct_prediction = tf.equal(tf.round(Y), tf.round(Ypredict))
-    # Accuracy of the trained model, between 0 (worst) and 1 (best)
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    bpmll_acc = bpmll.bp_mll_loss(Y, Ypredict)
+    bpmll_loss = bpmll.bp_mll_loss(Y, Y_raw_predict)
 
 # Step 7: Define training optimizer
 
@@ -199,29 +195,36 @@ with tf.Session() as sess:
 
     # Train the model
     start_time = time.time()
-    epoches = []
-    losses = []
-    accuracies = []
-    for index in range(initial_step, N_BATCHES * N_EPOCHS):
-        X_batch, Y_batch, filename_batch = sess.run([train_image_batch,
-                                                     train_label_batch,
-                                                     train_filename_batch])
+    dashboard = []
+    for index in range(initial_step, initial_step+101):#N_BATCHES * N_EPOCHS):
+        X_batch, Y_batch = sess.run([train_image_batch, train_label_batch])
         if index % SKIP_STEP == 0:
-            loss_batch, accuracy_batch, acc2 = sess.run([loss, accuracy, bpmll_acc], 
-                                feed_dict={X: X_batch, Y:Y_batch, dropout: 1.0})
-            logger.info("""Step {}: loss = {:5.3f}, accuracy = {:1.3f} (bpmll: {})""".format(index, loss_batch, accuracy_batch, acc2))
-            epoches.append(index)
-            losses.append(loss_batch)
-            accuracies.append(accuracy_batch)
+            loss_batch, bpmll, Y_pred = \
+            sess.run([loss, bpmll_loss, Y_predict],
+                     feed_dict={X: X_batch, Y: Y_batch, dropout: 1.0})
+            dashboard_batch = cnn_mapillary_dashboard.dashboard_building(Y_batch, Y_pred)
+            dashboard_batch.insert(0, bpmll)
+            dashboard_batch.insert(0, loss_batch)
+            dashboard_batch.insert(0, index)
+            dashboard.append(dashboard_batch)
+            logger.info("""Step {}: loss = {:5.3f}, accuracy={:1.3f}, precision={:1.3f}, recall={:1.3f}""".format(index, loss_batch, dashboard_batch[4], dashboard_batch[5], dashboard_batch[6]))
         if (index+1) % N_BATCHES == 0:
             saver.save(sess, '../checkpoints/'+NETWORK_NAME+'/epoch', index)
         sess.run(optimizer, feed_dict={X: X_batch, Y: Y_batch, dropout: DROPOUT})
     logger.info("Optimization Finished!")
     logger.info("Total time: {:.2f} seconds".format(time.time() - start_time))
     
-    # The results are stored as a pandas dataframe and saved on the file system.
-    param_history = pd.DataFrame({"epoch":epoches, "loss":losses,
-                                  "accuracy":accuracies})
+    # The results are stored as a pandas dataframe and saved on the file
+    # system
+    dashboard_columns = ["epoch", "loss", "bpmll_loss", "hamming_loss",
+                         "accuracy", "precision", "recall", "F_measure"]
+    dashboard_columns_by_label = [["accuracy_label"+str(i),
+                                   "precision_label"+str(i),
+                                   "recall_label"+str(i)]
+                                  for i in range(len(Y_batch[0]))]
+    dashboard_columns_by_label = utils.unnest(dashboard_columns_by_label)
+    dashboard_columns = dashboard_columns + dashboard_columns_by_label
+    param_history = pd.DataFrame(dashboard, columns = dashboard_columns)
     param_history = param_history.set_index("epoch")
     utils.make_dir(os.path.join("data", "results"))
     result_file_name = os.path.join("data", "results", NETWORK_NAME + ".csv")
